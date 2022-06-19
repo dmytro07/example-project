@@ -16,7 +16,9 @@ export enum PermissionAction {
   DELETE = 'delete',
   ALL = 'all',
 }
-export type PermissionEntity = any;
+export type PermissionEntity =
+  | InferSubjects<typeof ArticleEntity | typeof UserEntity>
+  | 'all';
 export type AppAbility = Ability<[PermissionAction, PermissionEntity]>;
 
 @Injectable()
@@ -28,14 +30,23 @@ export class CaslAbilityFactory {
     >(Ability as AbilityClass<AppAbility>);
 
     user.role.permissions.map((el) => {
-      can(el.action, el.entity);
+      can(el.action, this.getEntity(el.entity));
+      can(PermissionAction.READ, this.getEntity(el.entity), {
+        createdBy: user.id,
+      });
     });
-    can(PermissionAction.ALL, 'all', { createdBy: user.id });
 
     return build({
       // Read https://casl.js.org/v5/en/guide/subject-type-detection#use-classes-as-subject-types for details
       detectSubjectType: (item) =>
         item.constructor as ExtractSubjectType<PermissionEntity>,
     });
+  }
+
+  private getEntity(name: string) {
+    return {
+      ['Article']: ArticleEntity,
+      ['User']: UserEntity,
+    }[name];
   }
 }

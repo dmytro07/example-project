@@ -39,6 +39,7 @@ export class AuthGuard implements CanActivate {
     });
     const ability = await this.caslFactory.createForUser(user);
     req['user'] = user;
+    req['ability'] = ability;
     return policyHandlers.every((handler) => handler(ability));
   }
 }
